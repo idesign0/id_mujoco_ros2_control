@@ -57,8 +57,13 @@ bool CameraPlugin::init(rclcpp::Node::SharedPtr node, const mjModel* model, mjDa
   }
   else
   {
+#if !defined(__APPLE__)
     RCLCPP_WARN(node_->get_logger(), "Failed to initialize GLFW. Attempting EGL for headless rendering.");
     use_egl_ = true;
+#else
+    RCLCPP_WARN(node_->get_logger(), "Failed to initialize GLFW; EGL headless fallback is unavailable on macOS. Camera rendering disabled.");
+    use_egl_ = false;
+#endif
   }
   rendering_thread_ = std::thread(&CameraPlugin::update_loop, this);
   return true;
@@ -326,6 +331,10 @@ void CameraPlugin::close()
   }
 }
 
+#if defined(__APPLE__)
+bool CameraPlugin::init_egl_context() { return false; }
+void CameraPlugin::cleanup_egl_context() {}
+#else
 bool CameraPlugin::init_egl_context()
 {
   // Get EGL display
@@ -432,6 +441,8 @@ void CameraPlugin::cleanup_egl_context()
     egl_display_ = EGL_NO_DISPLAY;
   }
 }
+
+#endif
 
 void CameraPlugin::update_loop()
 {
