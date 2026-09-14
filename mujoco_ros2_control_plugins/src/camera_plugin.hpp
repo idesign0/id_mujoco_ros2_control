@@ -34,8 +34,10 @@
 
 #include "mujoco_ros2_control_plugins/mujoco_ros2_control_plugins_base.hpp"
 
+#if !defined(__APPLE__)
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#endif
 #include <GLFW/glfw3.h>
 #include <mujoco/mujoco.h>
 
@@ -268,9 +270,11 @@ private:
   bool new_data_{ false };
 
   // EGL context for headless rendering (used when GLFW is unavailable)
+#if !defined(__APPLE__)
   EGLDisplay egl_display_{ EGL_NO_DISPLAY };
   EGLContext egl_context_{ EGL_NO_CONTEXT };
   EGLSurface egl_surface_{ EGL_NO_SURFACE };
+#endif
   bool use_egl_{ false };
 
   /**
