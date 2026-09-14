@@ -18,7 +18,13 @@ find_package(std_srvs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(mujoco_ros2_control_msgs REQUIRED)
 find_package(glfw3 REQUIRED)
-find_package(OpenGL REQUIRED COMPONENTS EGL)
+if(APPLE)
+  find_package(OpenGL REQUIRED)
+  set(MJ_GL_LIBS OpenGL::GL)
+else()
+  find_package(OpenGL REQUIRED COMPONENTS EGL)
+  set(MJ_GL_LIBS OpenGL::EGL OpenGL::OpenGL)
+endif()
 
 # Attempt to link MuJoCo via the vendor package, if available
 find_package(mujoco_vendor QUIET)
@@ -66,8 +72,7 @@ target_link_libraries(mujoco_ros2_control_plugins_impl PUBLIC
   ${visualization_msgs_TARGETS}
   ${mujoco_ros2_control_msgs_TARGETS}
   glfw
-  OpenGL::EGL
-  OpenGL::OpenGL
+  ${MJ_GL_LIBS}
 )
 target_compile_definitions(mujoco_ros2_control_plugins_impl PRIVATE
   REALTIME_TOOLS_VERSION_MAJOR=${realtime_tools_VERSION_MAJOR}
