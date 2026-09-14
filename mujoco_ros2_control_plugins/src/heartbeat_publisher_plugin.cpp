@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "heartbeat_publisher_plugin.hpp"
+#include <cinttypes>  // PRIu64: message_count_ is uint64_t (unsigned long long on Apple LP64)
 #include <pluginlib/class_list_macros.hpp>
 
 namespace mujoco_ros2_control_plugins
@@ -50,7 +51,7 @@ void HeartbeatPublisherPlugin::update(const mjModel* /*model*/, mjData* data)
 
     heartbeat_publisher_->publish(message);
 
-    RCLCPP_DEBUG(logger_, "Published heartbeat #%lu at simulation time %.3f", message_count_, data->time);
+    RCLCPP_DEBUG(logger_, "Published heartbeat #%" PRIu64 " at simulation time %.3f", message_count_, data->time);
 
     message_count_++;
     last_publish_time_ = current_time;
@@ -59,7 +60,7 @@ void HeartbeatPublisherPlugin::update(const mjModel* /*model*/, mjData* data)
 
 void HeartbeatPublisherPlugin::cleanup()
 {
-  RCLCPP_INFO(logger_, "HeartbeatPublisherPlugin cleanup. Published %lu messages total.", message_count_);
+  RCLCPP_INFO(logger_, "HeartbeatPublisherPlugin cleanup. Published %" PRIu64 " messages total.", message_count_);
 
   heartbeat_publisher_.reset();
   node_.reset();
