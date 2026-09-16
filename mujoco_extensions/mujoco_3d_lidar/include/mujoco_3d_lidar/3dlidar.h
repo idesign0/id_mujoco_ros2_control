@@ -64,7 +64,10 @@ class Lidar
 {
 public:
   static Lidar* Create(const mjModel* m, mjData* d, int instance);
-  Lidar(Lidar&&) = default;
+  // Lidar owns a std::mutex/std::condition_variable/std::thread, so it is not movable; the
+  // defaulted move ctor is implicitly deleted and -Werror=defaulted-function-deleted rejects
+  // the declaration on libc++. Create() hands back a Lidar* (heap), so nothing moves a Lidar.
+  Lidar(Lidar&&) = delete;
   ~Lidar();
 
   void Reset(const mjModel* m, int instance);
