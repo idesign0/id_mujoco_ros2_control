@@ -168,11 +168,18 @@ set_target_properties(mujoco_ros2_control PROPERTIES
 # Force tinyxml2 to appear first in the DT_NEEDED entries by using LINK_OPTIONS.
 # TODO: Remove this after the following is resolved and the next ROS sync
 # https://github.com/pal-robotics/mujoco_vendor/issues/2
-target_link_options(mujoco_ros2_control PUBLIC
-  "LINKER:--push-state,--no-as-needed"
-  "$<TARGET_LINKER_FILE:tinyxml2::tinyxml2>"
-  "LINKER:--pop-state"
-)
+#
+# macOS: this is a GNU-ld DT_NEEDED-ordering workaround and does not apply here — Mach-O has no
+# DT_NEEDED and ld64 rejects --push-state/--no-as-needed/--pop-state; also tinyxml2::tinyxml2 is an
+# INTERFACE target on brew (no linker file), so $<TARGET_LINKER_FILE:...> errors at generate
+# ("Target tinyxml2::tinyxml2 is not an executable or library"). Guard it out on Apple.
+if(NOT APPLE)
+  target_link_options(mujoco_ros2_control PUBLIC
+    "LINKER:--push-state,--no-as-needed"
+    "$<TARGET_LINKER_FILE:tinyxml2::tinyxml2>"
+    "LINKER:--pop-state"
+  )
+endif()
 target_link_libraries(mujoco_ros2_control
 PUBLIC
   ament_index_cpp::ament_index_cpp
