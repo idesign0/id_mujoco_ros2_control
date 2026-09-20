@@ -143,6 +143,25 @@ else()
   target_link_libraries(mujoco_simulate PRIVATE lodepng mujoco::platform_ui_adapter ${MUJOCO_LIB})
   target_compile_options(mujoco_simulate PRIVATE ${MUJOCO_SILENCE_COMPILER_WARNINGS})
 
+  # macOS: MuJoCo's simulate app has Objective-C++ platform files that upstream's own
+  # simulate/CMakeLists compiles only on APPLE. This hand-rolled build listed just the .cc
+  # sources, so libsimulate.a ended up missing:
+  #   * mujoco::GlfwCoreVideo::*  (glfw_corevideo.mm — CVDisplayLink vsync used by glfw_adapter.cc)
+  #   * GetSavePath(char const*)  (macos_gui.mm       — native save dialog used by simulate.cc)
+  # -> "Undefined symbols for architecture arm64" at the mujoco_ros2_control link. Compile every
+  # simulate *.mm (glob, so we track upstream) as Objective-C++ into platform_ui_adapter (its
+  # objects are baked into libsimulate.a via $<TARGET_OBJECTS:...>), and link the frameworks those
+  # files need (Cocoa/AppKit for NSSavePanel, CoreVideo for CVDisplayLink, IOKit for GLFW).
+  if(APPLE)
+    enable_language(OBJCXX)
+    file(GLOB _mujoco_simulate_mm "${MUJOCO_SIMULATE_DIR}/*.mm")
+    if(_mujoco_simulate_mm)
+      set_source_files_properties(${_mujoco_simulate_mm} PROPERTIES LANGUAGE OBJCXX)
+      target_sources(platform_ui_adapter PRIVATE ${_mujoco_simulate_mm})
+    endif()
+    target_link_libraries(mujoco_simulate PUBLIC "-framework Cocoa" "-framework CoreVideo" "-framework IOKit")
+  endif()
+
   # We set these after creating the targets to avoid propagating them to other third-party targets
   set_compiler_options()
   export_windows_symbols()
